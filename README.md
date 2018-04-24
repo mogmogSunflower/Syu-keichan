@@ -1,0 +1,2 @@
+# Syu-keichan
+.xlsm用
