@@ -1,0 +1,214 @@
+Sub 本体()
+
+
+
+'主
+Dim FileName As String
+Dim OpenedBook As Workbook
+Dim IsBookOpen As Boolean
+Dim myPath As String
+Dim Sh As Worksheet
+
+    For Each Sh In Sheets
+        If Not (Sh.Name = "表紙") Then
+            Application.DisplayAlerts = False
+            Sh.delete
+            Application.DisplayAlerts = True
+        End If
+    Next
+    
+    Cells(10, 1).Copy
+    
+'open
+    FileName = Dir(ThisWorkbook.Path & "\" & "*.xls")
+    Do While FileName <> ""
+        If FileName <> ThisWorkbook.Name Then
+            IsBookOpen = False
+                For Each OpenedBook In Workbooks
+                If OpenedBook.Name = FileName Then
+                    IsBookOpen = True
+                Exit For
+                End If
+                Next
+                
+                If IsBookOpen = False Then
+                Workbooks.Open (ThisWorkbook.Path & "\" & FileName)
+                End If
+            
+                Call OpenCopy
+
+ 'close
+ 
+            Dim myBK As Workbook
+
+                Application.DisplayAlerts = False
+
+            For Each myBK In Workbooks
+                If myBK.Name <> "○○.xlsm" Then
+                    myBK.Close
+                End If
+            Next
+                Application.DisplayAlerts = True
+        End If
+        
+     
+        FileName = Dir()
+    
+    Loop
+     
+    Sheets("表紙").ACTIVATE
+
+    Call CHECK
+
+    
+        
+
+ End Sub
+
+Sub OpenCopy()
+Dim shname As String
+Dim Sh As Worksheet, myFlag As Boolean
+Dim i As Integer
+Dim lRow As Long, lCol As Long, lRow2 As Long
+    
+    shname = ActiveWorkbook.Name
+       
+    If myFlag = False Then 'newShAdd
+        Worksheets.Add(after:=Worksheets(Worksheets.Count)).Name = Format(shname)
+    End If
+        
+    Range("A1").PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+            :=False, Transpose:=False
+            Application.CutCopyMode = False 'GNamePaste
+
+        
+    Sheets(1).Select
+    BUSYO = Sheets(2).Range("A1").Value
+    
+    With Range("A1") 'fil_10
+        .AutoFilter Field:=10, Criteria1:="*" & BUSYO & "*"
+        .CurrentRegion.Copy Sheets(shname).Range("A2")
+    End With
+    
+    With Worksheets(1) 'fil_18
+        lRow = .Cells(Rows.Count, 1).End(xlUp).Row
+            If lRow < 2 Then
+                ActiveSheet.ShowAllData
+                With Range("A1")
+                    .AutoFilter Field:=18, Criteria1:="*" & BUSYO & "*"
+                    .CurrentRegion.Copy Sheets(shname).Range("A2")
+                End With
+            End If
+    End With
+    
+    With Worksheets(1) 'delete
+        lRow = .Cells(Rows.Count, 1).End(xlUp).Row
+            If lRow < 2 Then
+                GoTo oshimai
+            End If
+    End With
+    
+    ActiveSheet.ShowAllData 'fil_clear
+    Worksheets(Worksheets.Count).Select
+        Cells(1, 2) = shname
+        Rows("1:1").Select
+        Range(Selection, Selection.End(xlDown)).Copy
+    
+        Workbooks("○○.xlsm").ACTIVATE 'paste
+        Worksheets.Add after:=Worksheets(Worksheets.Count)
+            Range("A1").PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+                :=False, Transpose:=False
+                Application.CutCopyMode = False
+                
+            Worksheets(Worksheets.Count).Name = Cells(1, 2).Value 'add
+                Rows("2:2").Select
+                Range(Selection, Selection.End(xlDown)).Select
+                Selection.AutoFilter 'fil
+                Cells(1, 1).Select
+                Sheets(1).ACTIVATE
+                Cells(10, 1).Copy 'GNameCopy
+    
+oshimai:
+    Workbooks("○○.xlsm").ACTIVATE
+    Sheets(1).ACTIVATE
+    Cells(10, 1).Copy
+End Sub
+Sub delete()
+
+Dim Sh As Worksheet
+
+    For Each Sh In Sheets
+        If Not (Sh.Name = "表紙") Then
+            Application.DisplayAlerts = False
+            Sh.delete
+            Application.DisplayAlerts = True
+        End If
+    Next
+        Sheets(1).Range("a10") = "でふぉると検索値"
+        If Cells(1, 6) = False Then
+            MsgBox "シートの削除が完了しました"
+        End If
+End Sub
+Sub CHECK()
+Dim ws As Worksheet, flag As Boolean
+
+    For Each ws In Worksheets
+        If Worksheets.Count >= 2 Then flag = True
+    Next ws
+    
+    If flag = True Then
+        If Cells(1, 6) = False Then
+            MsgBox "処理が完了しました" & vbCrLf & "配信用ファイルを開きます"
+        End If
+             
+        Call save1
+        Application.DisplayAlerts = False
+            Sheets(1).delete
+        Application.DisplayAlerts = True
+    
+        Call save2
+    
+    Else
+        MsgBox "指定の検索値での結果はありません。" & vbCrLf & "入力名称を確認してください", vbExclamation
+    End If
+End Sub
+Sub save1()
+
+Dim wsh As Object 'IWshRuntimeLibrary.WshShell
+Dim dt_path As String
+Dim bk_name As String
+Dim g_name As String
+
+    Set wsh = CreateObject("WScript.Shell")
+        dt_path = wsh.SpecialFolders("desktop")
+    Set wsh = Nothing
+
+    g_name = Cells(10, 1)
+    bk_name = ActiveWorkbook.Name
+    bk_name = dt_path & "\" & g_name & "_集計結果リスト" & Format(Date, "yyyymmdd") & ".xls"
+
+        Application.DisplayAlerts = False
+            ActiveWorkbook.SaveAs FileName:=bk_name
+        Application.DisplayAlerts = True
+
+End Sub
+Sub save2()
+
+Dim wsh As Object 'IWshRuntimeLibrary.WshShell
+Dim dt_path As String
+Dim bk_name As String
+Dim g_name As String
+    
+    Set wsh = CreateObject("WScript.Shell")
+        dt_path = wsh.SpecialFolders("desktop")
+    Set wsh = Nothing
+
+    g_name = Cells(10, 1)
+    bk_name = ActiveWorkbook.Name
+    bk_name = dt_path & "\" & ThisWorkbook.Name & ".xls"
+
+        Application.DisplayAlerts = False
+            ActiveWorkbook.SaveAs FileName:=bk_name
+        Application.DisplayAlerts = True
+
+End Sub
